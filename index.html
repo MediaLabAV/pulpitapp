@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pulpit</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,500&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500;600&display=swap');
+
+:root {
+  --void:      #0a0a0b;
+  --stage:     #0f0f11;
+  --panel:     #151518;
+  --lift:      #1c1c21;
+  --raised:    #242429;
+  --rim:       #2e2e35;
+  --rim2:      #3a3a42;
+  --amber:     #d4902a;
+  --amber-dim: #8a5c14;
+  --amber-glow:rgba(212,144,42,0.12);
+  --amber-lt:  rgba(212,144,42,0.08);
+  --green:     #3a9e72;
+  --green-dim: rgba(58,158,114,0.15);
+  --red:       #c0392b;
+  --red-dim:   rgba(192,57,43,0.12);
+  --t1: #f0ece4;
+  --t2: #9a9690;
+  --t3: #5a5652;
+  --r:    10px;
+  --r-sm: 6px;
+  --r-lg: 16px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--void); color: var(--t1);
+  font-family: 'Barlow', sans-serif;
+  overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+
+/* ── SCREENS ── */
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s ease;
+  background: var(--void);
+}
+.screen.active { opacity: 1; pointer-events: auto; }
+
+/* ── TOP BAR ── */
+.top-bar {
+  flex-shrink: 0; display: flex; align-items: center; gap: 12px;
+  padding: 0 18px; height: 52px;
+  background: var(--panel); border-bottom: 1px solid var(--rim);
+}
+.top-bar-wordmark {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem; font-weight: 600; letter-spacing: 0.06em; color: var(--t1);
+}
+.top-bar-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.1rem; font-weight: 500; color: var(--t1);
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: none; border: none;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.75rem; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--amber); cursor: pointer; padding: 4px 0; flex-shrink: 0;
+}
+.back-btn svg { width: 14px; height: 14px; }
+
+/* ══════════════════════════════════════════
+   SCREEN 1 · DASHBOARD
+══════════════════════════════════════════ */
+#screen-dashboard { background: var(--void); }
+#dashboard-scroll {
+  flex: 1 1 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 20px 16px 80px;
+}
+.section-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.62rem; font-weight: 600;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--t3); margin-bottom: 12px;
+}
+#sermon-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+@media (orientation: landscape) {
+  #sermon-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* new card */
+.card-new {
+  aspect-ratio: 3/4; border: 1.5px dashed var(--rim2); border-radius: var(--r-lg);
+  background: transparent; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.card-new:active { border-color: var(--amber); background: var(--amber-lt); }
+.card-new-ring {
+  width: 42px; height: 42px; border: 1.5px solid var(--rim2); border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; color: var(--t3);
+  transition: border-color 0.2s, color 0.2s;
+}
+.card-new:active .card-new-ring { border-color: var(--amber); color: var(--amber); }
+.card-new-ring svg { width: 18px; height: 18px; }
+.card-new-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--t3); transition: color 0.2s;
+}
+.card-new:active .card-new-label { color: var(--amber); }
+
+/* sermon card */
+.sermon-card {
+  aspect-ratio: 3/4; border-radius: var(--r-lg);
+  background: var(--panel); border: 1px solid var(--rim);
+  overflow: hidden; cursor: pointer; position: relative;
+  display: flex; flex-direction: column;
+  transition: transform 0.15s;
+}
+.sermon-card:active { transform: scale(0.97); }
+.sermon-card.preached { opacity: 0.45; }
+.card-thumb {
+  flex: 1 1 0; min-height: 0; background: var(--stage); position: relative; overflow: hidden;
+}
+.card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-thumb-empty {
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+  background: var(--stage);
+}
+.card-thumb-empty-label {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-size: 0.6rem; color: var(--t3); text-align: center; padding: 8px;
+}
+.preached-chip {
+  position: absolute; top: 8px; right: 8px; background: var(--green); color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.48rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 20px; display: none;
+}
+.sermon-card.preached .preached-chip { display: block; }
+.card-footer {
+  flex-shrink: 0; padding: 9px 12px 10px;
+  border-top: 1px solid var(--rim); background: var(--panel);
+}
+.card-footer-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.88rem; font-weight: 600; color: var(--t1); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-footer-meta {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.58rem; color: var(--t3); letter-spacing: 0.04em; margin-top: 3px;
+}
+
+/* ══════════════════════════════════════════
+   SCREEN 2 · SETUP
+══════════════════════════════════════════ */
+#screen-setup { background: var(--void); }
+#setup-body {
+  flex: 1 1 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px;
+}
+.setup-cols { display: flex; flex-direction: column; gap: 14px; }
+@media (orientation: landscape) {
+  #setup-body { padding: 12px 16px; }
+  .setup-cols { flex-direction: row; align-items: flex-start; gap: 14px; }
+  .setup-col  { flex: 1 1 0; display: flex; flex-direction: column; gap: 14px; }
+}
+.setup-card {
+  background: var(--panel); border: 1px solid var(--rim); border-radius: var(--r-lg); overflow: hidden;
+}
+.setup-card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-bottom: 1px solid var(--rim);
+}
+.setup-card-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; flex-shrink: 0;
+}
+.icon-amber  { background: var(--amber-glow); border: 1px solid var(--amber-dim); }
+.icon-green  { background: var(--green-dim);  border: 1px solid rgba(58,158,114,0.3); }
+.icon-silver { background: var(--lift);        border: 1px solid var(--rim); }
+.setup-card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t1);
+}
+.setup-card-sub { font-size: 0.62rem; color: var(--t3); margin-top: 1px; }
+.setup-card-body { padding: 14px; }
+
+.field-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--t3); margin-bottom: 5px;
+}
+.field-input {
+  width: 100%; background: var(--stage); border: 1px solid var(--rim); border-radius: var(--r-sm);
+  padding: 9px 11px; font-family: 'Barlow', sans-serif; font-size: 0.85rem; color: var(--t1);
+  outline: none; transition: border-color 0.18s; -webkit-appearance: none;
+}
+.field-input:focus { border-color: var(--amber); }
+.field-input::placeholder { color: var(--t3); }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); }
+.field-wrap { margin-bottom: 11px; }
+.field-wrap:last-child { margin-bottom: 0; }
+.field-row { display: flex; gap: 10px; }
+.field-row .field-wrap { flex: 1; }
+
+.upload-zone {
+  border: 1.5px dashed var(--rim2); border-radius: var(--r); padding: 20px 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; text-align: center; transition: border-color 0.18s, background 0.18s;
+}
+.upload-zone:active { border-color: var(--amber); background: var(--amber-lt); }
+.uz-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; background: var(--lift);
+}
+.upload-zone-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em; color: var(--t1);
+}
+.upload-zone-sub { font-size: 0.65rem; color: var(--t3); line-height: 1.5; }
+.uz-btn {
+  background: var(--amber); color: var(--void); border: none; border-radius: 6px;
+  padding: 7px 16px; font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; pointer-events: none;
+}
+
+#slides-preview {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 5px; margin-top: 10px;
+}
+.stp {
+  aspect-ratio: 16/9; border-radius: 4px; overflow: hidden;
+  border: 1.5px solid transparent; position: relative;
+  background: var(--stage); cursor: pointer; transition: border-color 0.15s;
+}
+.stp img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.stp-num {
+  position: absolute; bottom: 2px; right: 3px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.38rem; color: rgba(255,255,255,0.5);
+}
+.stp-del {
+  position: absolute; top: 2px; right: 2px; width: 13px; height: 13px; border-radius: 50%;
+  background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+  font-size: 0.45rem; color: #fff; opacity: 0; transition: opacity 0.15s;
+}
+.stp:hover .stp-del { opacity: 1; }
+
+#pdf-setup-done {
+  display: none; align-items: center; gap: 10px; padding: 10px 12px;
+  background: var(--green-dim); border: 1px solid rgba(58,158,114,0.25);
+  border-radius: var(--r-sm); margin-top: 10px;
+}
+#pdf-setup-done .psd-icon { font-size: 1rem; }
+#pdf-setup-done .psd-name { font-size: 0.75rem; font-weight: 600; color: var(--green); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#pdf-setup-done .psd-pages { font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; color: var(--green); }
+.psd-change {
+  background: none; border: 1px solid var(--green); color: var(--green); border-radius: 5px;
+  padding: 3px 8px; font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.58rem; font-weight: 600; cursor: pointer; letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0;
+}
+
+#btn-create-project {
+  width: 100%; margin-top: 4px; background: var(--amber); color: var(--void);
+  border: none; border-radius: var(--r); padding: 14px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.92rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.18s, transform 0.12s;
+  box-shadow: 0 4px 24px rgba(212,144,42,0.25);
+}
+#btn-create-project:disabled { opacity: 0.3; box-shadow: none; cursor: not-allowed; }
+#btn-create-project:not(:disabled):active { transform: scale(0.98); opacity: 0.9; }
+
+/* ══════════════════════════════════════════
+   SCREEN 3 · PREACH
+══════════════════════════════════════════ */
+#screen-preach { background: var(--void); }
+
+#preach-topbar {
+  flex-shrink: 0; display: flex; align-items: center; gap: 10px;
+  padding: 0 14px; height: 48px;
+  background: var(--stage); border-bottom: 1px solid var(--rim);
+}
+.mark-btn {
+  flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid var(--rim2); border-radius: var(--r-sm);
+  padding: 6px 11px; font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--t2); cursor: pointer; transition: all 0.18s;
+}
+.mark-btn:active { background: var(--lift); }
+.mark-btn.done { border-color: var(--green); color: var(--green); }
+.mark-btn svg { width: 12px; height: 12px; }
+
+#preach-portrait { flex: 1 1 0; display: flex; flex-direction: column; min-height: 0; }
+#preach-landscape { flex: 1 1 0; display: none; flex-direction: row; min-height: 0; }
+@media (orientation: landscape) {
+  #preach-portrait  { display: none; }
+  #preach-landscape { display: flex; }
+}
+
+/* stage row */
+#port-stage-row, #land-stage-row {
+  flex-shrink: 0; display: flex; flex-direction: row; align-items: stretch; background: #000;
+}
+.side-btn {
+  flex-shrink: 0; width: 42px; background: var(--stage); border: none;
+  color: var(--t3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s; touch-action: manipulation;
+}
+.side-btn:active { background: var(--amber); color: var(--void); }
+.side-btn svg { width: 18px; height: 18px; }
+.stage-outer { flex: 1 1 0; min-width: 0; background: #000; display: flex; align-items: center; }
+.stage-window { width: 100%; aspect-ratio: 16/9; position: relative; overflow: hidden; background: #000; }
+.pslide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.28s ease; pointer-events: none; }
+.pslide.active { opacity: 1; }
+.pslide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#stage-placeholder, #land-stage-placeholder {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; background: var(--void);
+}
+.sph-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--t3);
+}
+
+/* counter */
+#port-counter, #land-counter {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+  background: var(--stage); padding: 5px 12px 5px 54px; border-bottom: 1px solid var(--rim);
+}
+.counter-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.65rem; color: var(--t3); letter-spacing: 0.04em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;
+}
+.counter-num {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; color: var(--t3); letter-spacing: 0.15em;
+}
+
+/* strip */
+#port-strip-row, #land-strip-row {
+  flex-shrink: 0; background: var(--panel); border-bottom: 1px solid var(--rim); padding: 7px 9px;
+}
+.slide-strip {
+  display: flex; flex-direction: row; gap: 6px;
+  overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.slide-strip::-webkit-scrollbar { display: none; }
+.thumb {
+  flex-shrink: 0; width: 78px; border-radius: 7px;
+  border: 2px solid transparent; overflow: hidden; cursor: pointer;
+  background: var(--stage); transition: border-color 0.18s, transform 0.12s;
+}
+.thumb:active { transform: scale(0.93); }
+.thumb.active { border-color: var(--amber); }
+.thumb-img { width: 100%; aspect-ratio: 16/9; overflow: hidden; background: var(--void); display: flex; align-items: center; justify-content: center; }
+.thumb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-foot { display: flex; align-items: center; justify-content: space-between; padding: 3px 5px 4px; background: var(--panel); }
+.thumb-name { font-family: 'Barlow Condensed', sans-serif; font-size: 0.4rem; font-weight: 500; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 52px; }
+.thumb-n    { font-family: 'Barlow Condensed', sans-serif; font-size: 0.4rem; color: var(--t3); }
+.thumb.active .thumb-name, .thumb.active .thumb-n { color: var(--amber); }
+
+/* pdf panel */
+#port-pdf { flex: 1 1 0; display: flex; flex-direction: column; min-height: 0; }
+#land-left  { width: 54%; display: flex; flex-direction: column; background: var(--void); border-right: 1px solid var(--rim); }
+#land-right { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; background: var(--void); }
+#land-pdf   { flex: 1 1 0; display: flex; flex-direction: column; min-height: 0; }
+
+.pdf-toolbar {
+  flex-shrink: 0; display: flex; align-items: center; gap: 9px; padding: 8px 13px;
+  background: var(--panel); border-bottom: 1px solid var(--rim);
+}
+.pdf-tb-icon { width: 26px; height: 26px; border-radius: 6px; background: var(--lift); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; }
+.pdf-tb-info { flex: 1; min-width: 0; }
+.pdf-tb-name { font-size: 0.7rem; font-weight: 600; color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdf-tb-sub  { font-family: 'Barlow Condensed', sans-serif; font-size: 0.58rem; color: var(--t3); margin-top: 1px; }
+.pdf-badge   { display: none; align-items: center; gap: 4px; padding: 3px 8px; background: var(--green-dim); border: 1px solid rgba(58,158,114,0.25); border-radius: 20px; }
+.pdf-badge svg { width: 9px; height: 9px; color: var(--green); }
+.pdf-badge-txt { font-family: 'Barlow Condensed', sans-serif; font-size: 0.58rem; font-weight: 600; color: var(--green); white-space: nowrap; }
+
+.pdf-scroll {
+  flex: 1 1 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: var(--rim2) transparent;
+}
+.pdf-scroll::-webkit-scrollbar { width: 3px; }
+.pdf-scroll::-webkit-scrollbar-thumb { background: var(--rim2); border-radius: 2px; }
+.pdf-empty-wrap { display: flex; align-items: center; justify-content: center; height: 100%; padding: 24px; }
+.pdf-empty-card {
+  width: 100%; max-width: 260px; background: var(--panel);
+  border: 1.5px dashed var(--rim2); border-radius: var(--r-lg);
+  padding: 24px 18px; display: flex; flex-direction: column; align-items: center; gap: 9px; text-align: center;
+}
+.pec-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--lift); border: 1px solid var(--rim); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+.pec-title { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-weight: 600; color: var(--t1); }
+.pec-body  { font-size: 0.67rem; color: var(--t3); line-height: 1.55; }
+.pdf-loading {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; gap: 12px; padding: 24px;
+}
+.spin-ring { width: 32px; height: 32px; border: 2.5px solid var(--rim2); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.75s linear infinite; }
+.spin-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; color: var(--t3); letter-spacing: 0.1em; text-transform: uppercase; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.pdf-pages { display: flex; flex-direction: column; align-items: stretch; padding: 8px 8px 30px; }
+.pdf-pages canvas { display: block; width: 100%; height: auto; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: flex-end; z-index: 300;
+  opacity: 0; pointer-events: none; transition: opacity 0.22s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal-sheet {
+  width: 100%; background: var(--panel); border-radius: 18px 18px 0 0;
+  border-top: 1px solid var(--rim); padding-bottom: 30px;
+  transform: translateY(100%); transition: transform 0.28s cubic-bezier(0.34,1.15,0.64,1);
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--rim2); margin: 12px auto 6px; }
+.modal-header { padding: 6px 20px 14px; border-bottom: 1px solid var(--rim); }
+.modal-project-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--t1); }
+.modal-project-sub { font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; color: var(--t3); margin-top: 2px; letter-spacing: 0.06em; }
+.modal-actions { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.sheet-btn {
+  display: flex; align-items: center; gap: 12px; padding: 13px 15px;
+  background: var(--lift); border: 1px solid var(--rim); border-radius: var(--r-sm);
+  font-family: 'Barlow', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--t1);
+  cursor: pointer; transition: background 0.15s; width: 100%; text-align: left;
+}
+.sheet-btn:active { background: var(--raised); }
+.sheet-btn svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--t2); }
+.sheet-btn.amber svg { color: var(--amber); }
+.sheet-btn.green  svg { color: var(--green); }
+.sheet-btn.danger { color: var(--red); }
+.sheet-btn.danger svg { color: var(--red); }
+
+/* ── GLOBAL LOADER ── */
+#global-loader {
+  position: fixed; inset: 0; background: rgba(10,10,11,0.9);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 14px; z-index: 500; backdrop-filter: blur(4px);
+}
+#global-loader p {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--t3);
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--raised); border: 1px solid var(--rim2);
+  color: var(--t2); padding: 9px 18px; border-radius: 30px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+  white-space: nowrap; z-index: 600;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════
+     SCREEN 1 · DASHBOARD
+══════════════════════════════ -->
+<div id="screen-dashboard" class="screen active">
+  <div class="top-bar">
+    <div style="flex:1">
+      <div class="top-bar-wordmark">Pulpit</div>
+    </div>
+  </div>
+  <div id="dashboard-scroll">
+    <div class="section-label" style="padding:0 2px 2px;">Your Sermons</div>
+    <div id="sermon-grid">
+      <div class="card-new" id="btn-new-project">
+        <div class="card-new-ring">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <span class="card-new-label">New Sermon</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 2 · SETUP
+══════════════════════════════ -->
+<div id="screen-setup" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" id="setup-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Sermons
+    </button>
+    <div style="flex:1">
+      <div class="top-bar-title">New Sermon</div>
+    </div>
+  </div>
+  <div id="setup-body">
+    <div class="setup-cols">
+      <div class="setup-col">
+        <div class="setup-card">
+          <div class="setup-card-header">
+            <div class="setup-card-icon icon-silver">✏️</div>
+            <div>
+              <div class="setup-card-title">Sermon Details</div>
+              <div class="setup-card-sub">Title, date, scripture</div>
+            </div>
+          </div>
+          <div class="setup-card-body">
+            <div class="field-wrap">
+              <div class="field-label">Sermon Title</div>
+              <input type="text" class="field-input" id="field-title" placeholder="e.g. Walking in the Light">
+            </div>
+            <div class="field-row">
+              <div class="field-wrap">
+                <div class="field-label">Date</div>
+                <input type="date" class="field-input" id="field-date">
+              </div>
+              <div class="field-wrap">
+                <div class="field-label">Scripture</div>
+                <input type="text" class="field-input" id="field-scripture" placeholder="e.g. 1 John 1:5">
+              </div>
+            </div>
+          </div>
+        </div>
+        <button id="btn-create-project" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Create Sermon Project
+        </button>
+      </div>
+      <div class="setup-col">
+        <div class="setup-card">
+          <div class="setup-card-header">
+            <div class="setup-card-icon icon-amber">🖼️</div>
+            <div>
+              <div class="setup-card-title">Slides</div>
+              <div class="setup-card-sub">JPG or PNG images, in order</div>
+            </div>
+          </div>
+          <div class="setup-card-body">
+            <div class="upload-zone" id="slides-upload-zone">
+              <div class="uz-icon">🖼️</div>
+              <div class="upload-zone-title">Add Slide Images</div>
+              <div class="upload-zone-sub">Tap to select JPG or PNG files.<br>They'll play in the order you pick them.</div>
+              <div class="uz-btn">Choose Images</div>
+            </div>
+            <input type="file" id="slides-file-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none">
+            <div id="slides-preview"></div>
+          </div>
+        </div>
+        <div class="setup-card">
+          <div class="setup-card-header">
+            <div class="setup-card-icon icon-green">📄</div>
+            <div>
+              <div class="setup-card-title">Sermon Notes</div>
+              <div class="setup-card-sub">Manuscript or outline PDF</div>
+            </div>
+          </div>
+          <div class="setup-card-body">
+            <div class="upload-zone" id="pdf-upload-zone">
+              <div class="uz-icon">📑</div>
+              <div class="upload-zone-title">Add Notes PDF</div>
+              <div class="upload-zone-sub">Scrolls independently while your slides stay up top.</div>
+              <div class="uz-btn" style="background:var(--green)">Choose PDF</div>
+            </div>
+            <input type="file" id="pdf-setup-input" accept="application/pdf" style="display:none">
+            <div id="pdf-setup-done">
+              <span class="psd-icon">✅</span>
+              <span id="psd-name" class="psd-name"></span>
+              <span id="psd-pages" class="psd-pages"></span>
+              <button class="psd-change" id="pdf-change-btn">Change</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 3 · PREACH
+══════════════════════════════ -->
+<div id="screen-preach" class="screen">
+  <div id="preach-topbar">
+    <button class="back-btn" id="preach-back" style="color:var(--t3);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="top-bar-title" id="preach-title" style="font-size:0.9rem;"></div>
+    <button class="mark-btn" id="btn-mark-preached">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Mark Preached
+    </button>
+  </div>
+
+  <!-- PORTRAIT -->
+  <div id="preach-portrait">
+    <div id="port-stage-row">
+      <button class="side-btn" id="port-btn-prev">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="stage-outer">
+        <div class="stage-window" id="port-stage">
+          <div id="stage-placeholder"><div class="sph-text">No slides loaded</div></div>
+        </div>
+      </div>
+      <button class="side-btn" id="port-btn-next">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+    <div id="port-counter">
+      <span class="counter-label" id="port-counter-label">—</span>
+      <span class="counter-num"   id="port-counter-num">—</span>
+    </div>
+    <div id="port-strip-row"><div class="slide-strip" id="port-strip"></div></div>
+    <div id="port-pdf">
+      <div class="pdf-toolbar">
+        <div class="pdf-tb-icon">📄</div>
+        <div class="pdf-tb-info">
+          <div class="pdf-tb-name" id="port-pdf-name">Sermon Notes</div>
+          <div class="pdf-tb-sub"  id="port-pdf-sub">No notes loaded</div>
+        </div>
+        <div class="pdf-badge" id="port-pdf-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span class="pdf-badge-txt" id="port-pdf-badge-txt">—</span>
+        </div>
+      </div>
+      <div class="pdf-scroll" id="port-pdf-scroll">
+        <div class="pdf-empty-wrap" id="port-pdf-empty">
+          <div class="pdf-empty-card">
+            <div class="pec-icon">📖</div>
+            <div class="pec-title">No Notes Attached</div>
+            <div class="pec-body">This sermon was created without a notes PDF.</div>
+          </div>
+        </div>
+        <div class="pdf-loading" id="port-pdf-loading"><div class="spin-ring"></div><div class="spin-label">Loading Notes</div></div>
+        <div class="pdf-pages" id="port-pdf-pages"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LANDSCAPE -->
+  <div id="preach-landscape">
+    <div id="land-left">
+      <div id="land-stage-row">
+        <button class="side-btn" id="land-btn-prev">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="stage-outer">
+          <div class="stage-window" id="land-stage">
+            <div id="land-stage-placeholder"><div class="sph-text">No slides</div></div>
+          </div>
+        </div>
+        <button class="side-btn" id="land-btn-next">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div id="land-counter">
+        <span class="counter-label" id="land-counter-label">—</span>
+        <span class="counter-num"   id="land-counter-num">—</span>
+      </div>
+      <div id="land-strip-row"><div class="slide-strip" id="land-strip"></div></div>
+    </div>
+    <div id="land-right">
+      <div id="land-pdf">
+        <div class="pdf-toolbar">
+          <div class="pdf-tb-icon">📄</div>
+          <div class="pdf-tb-info">
+            <div class="pdf-tb-name" id="land-pdf-name">Sermon Notes</div>
+            <div class="pdf-tb-sub"  id="land-pdf-sub">No notes loaded</div>
+          </div>
+          <div class="pdf-badge" id="land-pdf-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="pdf-badge-txt" id="land-pdf-badge-txt">—</span>
+          </div>
+        </div>
+        <div class="pdf-scroll" id="land-pdf-scroll">
+          <div class="pdf-empty-wrap" id="land-pdf-empty">
+            <div class="pdf-empty-card">
+              <div class="pec-icon">📖</div>
+              <div class="pec-title">No Notes Attached</div>
+              <div class="pec-body">This sermon was created without a notes PDF.</div>
+            </div>
+          </div>
+          <div class="pdf-loading" id="land-pdf-loading"><div class="spin-ring"></div><div class="spin-label">Loading Notes</div></div>
+          <div class="pdf-pages" id="land-pdf-pages"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CARD MODAL -->
+<div class="modal-overlay" id="card-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-project-title" id="modal-title-text">Sermon</div>
+      <div class="modal-project-sub"   id="modal-sub-text"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="sheet-btn amber" id="modal-open">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Open &amp; Preach
+      </button>
+      <button class="sheet-btn green" id="modal-preached">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark as Preached
+      </button>
+      <button class="sheet-btn danger" id="modal-delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Delete Sermon
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="global-loader">
+  <div class="spin-ring" style="width:38px;height:38px;border-width:3px;"></div>
+  <p id="loader-text">Loading</p>
+  <div id="progress-wrap" style="display:none;width:220px;background:var(--rim);border-radius:4px;height:4px;overflow:hidden;margin-top:4px;">
+    <div id="progress-bar" style="height:100%;width:0%;background:var(--amber);border-radius:4px;transition:width 0.2s ease;"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════
+   SUPABASE INIT
+══════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://uqflaftghjbavygmblin.supabase.co';
+const SUPABASE_KEY  = 'sb_publishable_U6rxC4SwijIHhkijssidiw_XruDFFPN';
+const BUCKET        = 'sermon-assets';
+const sb            = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+let projects     = [];   // loaded from DB
+let activeProj   = null;
+let currentSlide = 0;
+let selectedId   = null;
+let setupSlides  = [];   // { name, file, dataURL }
+let setupPDF     = null; // { name, file, dataURL, pageCount }
+
+/* ══════════════════════════════════════════
+   BOOT — load all sermons on start
+══════════════════════════════════════════ */
+(async () => {
+  showLoader('Loading sermons…');
+  try {
+    const { data, error } = await sb.from('sermons').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    projects = data || [];
+    renderDashboard();
+  } catch (e) {
+    console.error(e);
+    toast('Could not reach database');
+  } finally {
+    hideLoader();
+  }
+})();
+
+/* ══════════════════════════════════════════
+   ROUTING
+══════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ══════════════════════════════════════════
+   LOADER / TOAST
+══════════════════════════════════════════ */
+function showLoader(msg) {
+  document.getElementById('loader-text').textContent = msg || 'Loading…';
+  document.getElementById('global-loader').style.display = 'flex';
+}
+function hideLoader() {
+  document.getElementById('global-loader').style.display = 'none';
+  // reset progress bar
+  const bar = document.getElementById('progress-bar');
+  if (bar) { bar.style.width = '0%'; bar.parentElement.style.display = 'none'; }
+}
+function showProgress(done, total) {
+  document.getElementById('global-loader').style.display = 'flex';
+  const wrap = document.getElementById('progress-wrap');
+  const bar  = document.getElementById('progress-bar');
+  if (!wrap || !bar) return;
+  if (total > 0) {
+    wrap.style.display = 'block';
+    const pct = Math.round((done / total) * 100);
+    bar.style.width = pct + '%';
+    document.getElementById('loader-text').textContent =
+      done >= total ? 'Finalizing…' : `Uploading slides… ${done} / ${total}`;
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ══════════════════════════════════════════
+   STORAGE HELPERS
+══════════════════════════════════════════ */
+async function uploadFile(file, path) {
+  const { error } = await sb.storage.from(BUCKET).upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+function storagePath(sermonId, filename) {
+  // sermons/<id>/filename
+  return `sermons/${sermonId}/${filename}`;
+}
+
+async function deleteSermonFiles(sermonId) {
+  // List and delete all files under sermons/<id>/
+  const { data } = await sb.storage.from(BUCKET).list(`sermons/${sermonId}`);
+  if (data?.length) {
+    const paths = data.map(f => `sermons/${sermonId}/${f.name}`);
+    await sb.storage.from(BUCKET).remove(paths);
+  }
+}
+
+/* ══════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════ */
+function renderDashboard() {
+  const grid = document.getElementById('sermon-grid');
+  grid.querySelectorAll('.sermon-card').forEach(c => c.remove());
+  projects.forEach(proj => {
+    const card = document.createElement('div');
+    card.className = 'sermon-card' + (proj.preached ? ' preached' : '');
+    card.dataset.id = proj.id;
+
+    // First slide URL comes from slide_paths[0] — a public storage URL
+    const thumbHTML = proj.slide_paths?.length
+      ? `<img src="${proj.slide_paths[0]}" alt="" loading="lazy">`
+      : `<div class="card-thumb-empty"><span class="card-thumb-empty-label">${proj.title}</span></div>`;
+
+    const meta = [proj.date ? fmtDate(proj.date) : null, proj.scripture || null]
+      .filter(Boolean).join('  ·  ');
+
+    card.innerHTML = `
+      <div class="card-thumb">
+        ${thumbHTML}
+        <div class="preached-chip">Preached</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-footer-title">${proj.title}</div>
+        <div class="card-footer-meta">${meta}</div>
+      </div>`;
+    card.addEventListener('click', () => openCardModal(proj.id));
+    grid.insertBefore(card, grid.firstChild);
+  });
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${mo[+m-1]} ${+day}, ${y}`;
+}
+
+document.getElementById('btn-new-project').addEventListener('click', () => {
+  resetSetup(); showScreen('screen-setup');
+});
+
+/* ══════════════════════════════════════════
+   CARD MODAL
+══════════════════════════════════════════ */
+function openCardModal(id) {
+  selectedId = id;
+  const p = projects.find(x => x.id === id);
+  document.getElementById('modal-title-text').textContent = p.title;
+  const meta = [p.date ? fmtDate(p.date) : null, p.scripture || null].filter(Boolean).join(' · ');
+  document.getElementById('modal-sub-text').textContent = meta;
+  const btn = document.getElementById('modal-preached');
+  btn.childNodes[btn.childNodes.length - 1].textContent =
+    p.preached ? ' Unmark Preached' : ' Mark as Preached';
+  document.getElementById('card-modal').classList.add('open');
+}
+document.getElementById('card-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('card-modal')) closeModal();
+});
+function closeModal() { document.getElementById('card-modal').classList.remove('open'); }
+
+document.getElementById('modal-open').addEventListener('click', () => {
+  closeModal(); openProject(selectedId);
+});
+
+document.getElementById('modal-preached').addEventListener('click', async () => {
+  const p = projects.find(x => x.id === selectedId);
+  if (!p) return;
+  closeModal();
+  const newVal = !p.preached;
+  p.preached = newVal;
+  renderDashboard();
+  const { error } = await sb.from('sermons').update({ preached: newVal }).eq('id', selectedId);
+  if (error) { toast('Save failed'); p.preached = !newVal; renderDashboard(); }
+  else toast(newVal ? 'Marked as preached' : 'Unmarked');
+});
+
+document.getElementById('modal-delete').addEventListener('click', async () => {
+  closeModal();
+  showLoader('Deleting…');
+  try {
+    await deleteSermonFiles(selectedId);
+    const { error } = await sb.from('sermons').delete().eq('id', selectedId);
+    if (error) throw error;
+    projects = projects.filter(x => x.id !== selectedId);
+    renderDashboard();
+    toast('Sermon deleted');
+  } catch (e) {
+    console.error(e); toast('Delete failed');
+  } finally {
+    hideLoader();
+  }
+});
+
+/* ══════════════════════════════════════════
+   SETUP
+══════════════════════════════════════════ */
+function resetSetup() {
+  setupSlides = []; setupPDF = null;
+  ['field-title','field-scripture'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('field-date').value = '';
+  document.getElementById('slides-preview').innerHTML = '';
+  document.getElementById('pdf-setup-done').style.display = 'none';
+  document.getElementById('pdf-upload-zone').style.display = '';
+  updateCreateBtn();
+}
+document.getElementById('setup-back').addEventListener('click', () => showScreen('screen-dashboard'));
+document.getElementById('field-title').addEventListener('input', updateCreateBtn);
+function updateCreateBtn() {
+  document.getElementById('btn-create-project').disabled =
+    !document.getElementById('field-title').value.trim();
+}
+
+// Slides upload
+document.getElementById('slides-upload-zone').addEventListener('click', () =>
+  document.getElementById('slides-file-input').click());
+document.getElementById('slides-file-input').addEventListener('change', async e => {
+  // Sort incoming files by filename using natural sort (1, 2, 10 not 1, 10, 2)
+  const incoming = Array.from(e.target.files).sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+  );
+  for (const f of incoming) {
+    setupSlides.push({ name: f.name, file: f, dataURL: await toDataURL(f) });
+  }
+  // Re-sort the full list after adding, in case user added more files in a second pass
+  setupSlides.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' })
+  );
+  renderSlidesPrev();
+  e.target.value = '';
+});
+function renderSlidesPrev() {
+  const c = document.getElementById('slides-preview');
+  c.innerHTML = '';
+  setupSlides.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'stp';
+    d.innerHTML = `<img src="${s.dataURL}" alt=""><span class="stp-num">${i+1}</span><span class="stp-del" data-i="${i}">✕</span>`;
+    d.querySelector('.stp-del').addEventListener('click', ev => {
+      ev.stopPropagation(); setupSlides.splice(+ev.target.dataset.i, 1); renderSlidesPrev();
+    });
+    c.appendChild(d);
+  });
+  if (setupSlides.length) {
+    const add = document.createElement('div');
+    add.className = 'stp';
+    add.style.cssText = 'border:1.5px dashed var(--rim2);display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--stage);';
+    add.innerHTML = `<span style="font-size:1.1rem;color:var(--t3);">+</span>`;
+    add.addEventListener('click', () => document.getElementById('slides-file-input').click());
+    c.appendChild(add);
+  }
+}
+
+// PDF upload
+document.getElementById('pdf-upload-zone').addEventListener('click', () =>
+  document.getElementById('pdf-setup-input').click());
+document.getElementById('pdf-change-btn').addEventListener('click', () =>
+  document.getElementById('pdf-setup-input').click());
+document.getElementById('pdf-setup-input').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  const dataURL = await toDataURL(f);
+  const ab  = await f.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+  setupPDF = { name: f.name.replace(/\.pdf$/i,''), file: f, dataURL, pageCount: pdf.numPages };
+  document.getElementById('pdf-upload-zone').style.display = 'none';
+  const done = document.getElementById('pdf-setup-done');
+  done.style.display = 'flex';
+  document.getElementById('psd-name').textContent  = setupPDF.name;
+  document.getElementById('psd-pages').textContent = `${setupPDF.pageCount} pg`;
+  e.target.value = '';
+});
+
+// Create project → upload files → save to DB
+document.getElementById('btn-create-project').addEventListener('click', async () => {
+  const title     = document.getElementById('field-title').value.trim();
+  const date      = document.getElementById('field-date').value;
+  const scripture = document.getElementById('field-scripture').value.trim();
+  if (!title) return;
+
+  showLoader('Saving sermon…');
+  try {
+    // 1. Insert row first to get the UUID
+    const { data: row, error: insertErr } = await sb.from('sermons').insert({
+      title, date: date || null, scripture: scripture || null,
+      preached: false,
+      slide_paths: [],
+      pdf_path: null,
+      pdf_name: null,
+      pdf_page_count: 0,
+    }).select().single();
+    if (insertErr) throw insertErr;
+
+    const id = row.id;
+
+    // 2. Upload slides in PARALLEL — track progress
+    let done = 0;
+    const totalSlides = setupSlides.length;
+    showProgress(done, totalSlides);
+
+    const slideEntries = setupSlides.map((s, i) => ({
+      file: s.file,
+      path: storagePath(id, `slide_${String(i).padStart(3,'0')}.${s.file.name.split('.').pop()}`),
+      index: i,
+    }));
+
+    const slideResults = await Promise.all(
+      slideEntries.map(async entry => {
+        const url = await uploadFile(entry.file, entry.path);
+        done++;
+        showProgress(done, totalSlides);
+        return { index: entry.index, url };
+      })
+    );
+
+    // Sort back into original order (parallel finishes out of order)
+    const slidePaths = slideResults
+      .sort((a, b) => a.index - b.index)
+      .map(r => r.url);
+
+    // 3. Upload PDF
+    let pdfPath = null, pdfName = null, pdfPageCount = 0;
+    if (setupPDF) {
+      document.getElementById('loader-text').textContent = 'Uploading notes PDF…';
+      pdfPath      = await uploadFile(setupPDF.file, storagePath(id, 'notes.pdf'));
+      pdfName      = setupPDF.name;
+      pdfPageCount = setupPDF.pageCount;
+    }
+
+    // 4. Update row with real paths
+    const { error: updateErr } = await sb.from('sermons').update({
+      slide_paths:    slidePaths,
+      pdf_path:       pdfPath,
+      pdf_name:       pdfName,
+      pdf_page_count: pdfPageCount,
+    }).eq('id', id);
+    if (updateErr) throw updateErr;
+
+    // 5. Add to local state
+    const fullProj = { ...row, slide_paths: slidePaths, pdf_path: pdfPath, pdf_name: pdfName, pdf_page_count: pdfPageCount };
+    projects.unshift(fullProj);
+    renderDashboard();
+    showScreen('screen-dashboard');
+    toast('Sermon created');
+  } catch (e) {
+    console.error(e);
+    toast('Upload failed — check console');
+  } finally {
+    hideLoader();
+  }
+});
+
+/* ══════════════════════════════════════════
+   OPEN PROJECT → PREACH VIEW
+══════════════════════════════════════════ */
+async function openProject(id) {
+  showLoader('Opening sermon…');
+  activeProj   = projects.find(p => p.id === id);
+  currentSlide = 0;
+
+  document.getElementById('preach-title').textContent = activeProj.title;
+
+  // Build slide stages & strips (images load from Supabase Storage public URLs)
+  buildStage('port-stage', 'stage-placeholder');
+  buildStage('land-stage', 'land-stage-placeholder');
+  buildStrip('port-strip');
+  buildStrip('land-strip');
+  updateCounters();
+
+  const mb = document.getElementById('btn-mark-preached');
+  mb.classList.toggle('done', !!activeProj.preached);
+  mb.childNodes[mb.childNodes.length-1].textContent =
+    activeProj.preached ? ' Preached ✓' : ' Mark Preached';
+
+  // Show the preach screen immediately — PDF loads in background
+  hideLoader();
+  showScreen('screen-preach');
+  renderPDFLazy(); // non-blocking
+}
+
+function buildStage(stageId, phId) {
+  const stage = document.getElementById(stageId);
+  stage.querySelectorAll('.pslide').forEach(el => el.remove());
+  const ph = document.getElementById(phId);
+  if (ph) ph.style.display = activeProj.slide_paths?.length ? 'none' : 'flex';
+  (activeProj.slide_paths || []).forEach((url, i) => {
+    const d = document.createElement('div');
+    d.className = 'pslide' + (i === 0 ? ' active' : '');
+    d.innerHTML = `<img src="${url}" alt="Slide ${i+1}" draggable="false">`;
+    stage.appendChild(d);
+  });
+}
+
+function buildStrip(stripId) {
+  const strip = document.getElementById(stripId);
+  strip.innerHTML = '';
+  (activeProj.slide_paths || []).forEach((url, i) => {
+    const th = document.createElement('div');
+    th.className = 'thumb' + (i === 0 ? ' active' : '');
+    th.innerHTML = `
+      <div class="thumb-img"><img src="${url}" alt="" loading="lazy"></div>
+      <div class="thumb-foot">
+        <span class="thumb-name">Slide ${i+1}</span>
+        <span class="thumb-n">${i+1}</span>
+      </div>`;
+    th.addEventListener('click', () => goToSlide(i));
+    strip.appendChild(th);
+  });
+}
+
+function goToSlide(idx) {
+  const total = (activeProj.slide_paths || []).length;
+  if (idx < 0 || idx >= total) return;
+  ['port-stage','land-stage'].forEach(sid => {
+    const ps = document.getElementById(sid).querySelectorAll('.pslide');
+    ps[currentSlide]?.classList.remove('active');
+    ps[idx]?.classList.add('active');
+  });
+  ['port-strip','land-strip'].forEach(sid => {
+    const ts = document.getElementById(sid).querySelectorAll('.thumb');
+    ts[currentSlide]?.classList.remove('active');
+    ts[idx]?.classList.add('active');
+    ts[idx]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  });
+  currentSlide = idx;
+  updateCounters();
+}
+
+function updateCounters() {
+  const total = (activeProj.slide_paths || []).length;
+  const label = total ? `${activeProj.title}  ·  Slide ${currentSlide+1}` : '—';
+  const num   = total ? `${currentSlide+1} / ${total}` : '—';
+  document.getElementById('port-counter-label').textContent = label;
+  document.getElementById('port-counter-num').textContent   = num;
+  document.getElementById('land-counter-label').textContent = label;
+  document.getElementById('land-counter-num').textContent   = num;
+}
+
+document.getElementById('port-btn-prev').addEventListener('click', () => goToSlide(currentSlide-1));
+document.getElementById('port-btn-next').addEventListener('click', () => goToSlide(currentSlide+1));
+document.getElementById('land-btn-prev').addEventListener('click', () => goToSlide(currentSlide-1));
+document.getElementById('land-btn-next').addEventListener('click', () => goToSlide(currentSlide+1));
+
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('screen-preach').classList.contains('active')) return;
+  if (e.key==='ArrowRight'||e.key==='ArrowDown') { e.preventDefault(); goToSlide(currentSlide+1); }
+  if (e.key==='ArrowLeft' ||e.key==='ArrowUp')   { e.preventDefault(); goToSlide(currentSlide-1); }
+});
+
+/* ══════════════════════════════════════════
+   PDF RENDER — lazy, page by page as scrolled
+══════════════════════════════════════════ */
+let pdfDoc       = null;   // cached pdf document
+let pdfObservers = [];     // active IntersectionObservers to disconnect on reload
+
+async function renderPDFLazy() {
+  // Disconnect any old observers
+  pdfObservers.forEach(o => o.disconnect());
+  pdfObservers = [];
+
+  const portEmpty   = document.getElementById('port-pdf-empty');
+  const portLoading = document.getElementById('port-pdf-loading');
+  const portPages   = document.getElementById('port-pdf-pages');
+  const landEmpty   = document.getElementById('land-pdf-empty');
+  const landLoading = document.getElementById('land-pdf-loading');
+  const landPages   = document.getElementById('land-pdf-pages');
+
+  portPages.innerHTML = ''; landPages.innerHTML = '';
+
+  if (!activeProj.pdf_path) {
+    portEmpty.style.display = 'flex'; portLoading.style.display = 'none';
+    landEmpty.style.display = 'flex'; landLoading.style.display = 'none';
+    setTB('No notes attached', '');
+    return;
+  }
+
+  portEmpty.style.display  = 'none'; portLoading.style.display  = 'flex';
+  landEmpty.style.display  = 'none'; landLoading.style.display  = 'flex';
+  setTB(activeProj.pdf_name || 'Sermon Notes', 'Loading…');
+
+  // Fetch & parse PDF
+  const resp = await fetch(activeProj.pdf_path);
+  const ab   = await resp.arrayBuffer();
+  pdfDoc     = await pdfjsLib.getDocument({ data: ab }).promise;
+  const n    = pdfDoc.numPages;
+
+  portLoading.style.display = 'none';
+  landLoading.style.display = 'none';
+  setTB(activeProj.pdf_name || 'Sermon Notes', `${n} pages`, n);
+
+  const portW = Math.max(portPages.parentElement.clientWidth - 16, 100);
+  const landW = Math.max(landPages.parentElement.clientWidth - 16, 100);
+
+  // Create placeholder divs for every page — render only when scrolled into view
+  for (let p = 1; p <= n; p++) {
+    const ph = await makePDFPlaceholder(pdfDoc, p, portW);
+    ph.dataset.page   = p;
+    ph.dataset.portW  = portW;
+    ph.dataset.landW  = landW;
+    ph.dataset.target = 'port';
+    portPages.appendChild(ph);
+
+    const ph2 = await makePDFPlaceholder(pdfDoc, p, landW);
+    ph2.dataset.page   = p;
+    ph2.dataset.portW  = portW;
+    ph2.dataset.landW  = landW;
+    ph2.dataset.target = 'land';
+    landPages.appendChild(ph2);
+  }
+
+  // Set up IntersectionObserver to render on scroll
+  const renderOnView = async (entries, obs) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      obs.unobserve(entry.target);
+      const el     = entry.target;
+      const pageN  = +el.dataset.page;
+      const isLand = el.dataset.target === 'land';
+      const w      = isLand ? +el.dataset.landW : +el.dataset.portW;
+      const page   = await pdfDoc.getPage(pageN);
+      const vp0    = page.getViewport({ scale: 1 });
+      const vp     = page.getViewport({ scale: w / vp0.width });
+      const cv     = mkCanvas(vp);
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      el.replaceWith(cv);
+    }
+  };
+
+  // Render first 2 pages immediately, rest lazily
+  const allPort = Array.from(portPages.children);
+  const allLand = Array.from(landPages.children);
+
+  const renderImmediate = async (el) => {
+    const pageN = +el.dataset.page;
+    const isLand = el.dataset.target === 'land';
+    const w = isLand ? +el.dataset.landW : +el.dataset.portW;
+    const page = await pdfDoc.getPage(pageN);
+    const vp0 = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: w / vp0.width });
+    const cv = mkCanvas(vp);
+    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    el.replaceWith(cv);
+  };
+
+  // Render first 2 pages of each immediately
+  const immediatePort = allPort.slice(0, 2);
+  const immediateLand = allLand.slice(0, 2);
+  await Promise.all([...immediatePort, ...immediateLand].map(renderImmediate));
+
+  // Observe the rest
+  const obs = new IntersectionObserver(renderOnView, { rootMargin: '200px' });
+  pdfObservers.push(obs);
+  [...Array.from(portPages.children), ...Array.from(landPages.children)]
+    .filter(el => el.tagName === 'DIV' && el.dataset.page)
+    .forEach(el => obs.observe(el));
+}
+
+async function makePDFPlaceholder(pdf, pageNum, width) {
+  // Create a sized empty div as a placeholder before the page renders
+  const page = await pdf.getPage(pageNum);
+  const vp0  = page.getViewport({ scale: 1 });
+  const h    = Math.round((vp0.height / vp0.width) * width);
+  const div  = document.createElement('div');
+  div.style.cssText = `display:block;width:100%;height:${h}px;background:var(--stage);`;
+  return div;
+}
+
+function mkCanvas(vp) {
+  const c = document.createElement('canvas');
+  c.width = vp.width; c.height = vp.height;
+  c.style.cssText = 'display:block;width:100%;height:auto;';
+  return c;
+}
+function setTB(name, sub, pages) {
+  ['port','land'].forEach(pfx => {
+    document.getElementById(`${pfx}-pdf-name`).textContent = name;
+    document.getElementById(`${pfx}-pdf-sub`).textContent  = sub;
+    const badge = document.getElementById(`${pfx}-pdf-badge`);
+    if (pages) {
+      badge.style.display = 'flex';
+      document.getElementById(`${pfx}-pdf-badge-txt`).textContent = `${pages} pages`;
+    } else {
+      badge.style.display = 'none';
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   BACK / MARK PREACHED
+══════════════════════════════════════════ */
+document.getElementById('preach-back').addEventListener('click', () => {
+  showScreen('screen-dashboard');
+});
+
+document.getElementById('btn-mark-preached').addEventListener('click', async () => {
+  if (!activeProj) return;
+  const newVal = !activeProj.preached;
+  activeProj.preached = newVal;
+  const mb = document.getElementById('btn-mark-preached');
+  mb.classList.toggle('done', newVal);
+  mb.childNodes[mb.childNodes.length-1].textContent = newVal ? ' Preached ✓' : ' Mark Preached';
+  renderDashboard();
+  const { error } = await sb.from('sermons').update({ preached: newVal }).eq('id', activeProj.id);
+  if (error) { toast('Save failed'); }
+  else toast(newVal ? 'Marked as preached' : 'Unmarked');
+});
+
+/* ══════════════════════════════════════════
+   SCROLL GUARDS
+══════════════════════════════════════════ */
+['port-pdf-scroll','land-pdf-scroll'].forEach(id => {
+  document.getElementById(id).addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+});
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+function toDataURL(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+</script>
+</body>
+</html>
